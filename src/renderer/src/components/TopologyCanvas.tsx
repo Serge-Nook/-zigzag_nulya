@@ -130,12 +130,9 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
       select({ kind: 'node', id: n.id })
       setTool({ kind: 'select' })
     } else if (tool.kind === 'addText') {
-      const text = window.prompt('Текст надписи:', 'Надпись')
-      if (text) {
-        const l = { id: uuid(), x: p.x, y: p.y, text, fontSize: 16, color: '#0f172a' }
-        addLabel(l)
-        select({ kind: 'label', id: l.id })
-      }
+      const l = { id: uuid(), x: p.x, y: p.y, text: 'Новая надпись', fontSize: 16, color: '#0f172a' }
+      addLabel(l)
+      select({ kind: 'label', id: l.id })
       setTool({ kind: 'select' })
     }
   }
