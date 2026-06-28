@@ -6,6 +6,9 @@
 
 > Прототип, реализующий все разделы технического задания.
 
+**Автор:** Горшков Сергей Владимирович
+**Сайт:** https://nookbat.ru
+
 ## Возможности
 
 ### Построение и редактирование топологии
@@ -65,8 +68,16 @@ npm run build      # типы + production-сборка
 ```bash
 npm run build:win    # Windows (NSIS)
 npm run build:mac    # macOS (dmg)
-npm run build:linux  # Linux (AppImage)
+npm run build:linux  # Linux (deb + AppImage)
 ```
+
+### Установочные пакеты программы
+
+| Платформа | Формат пакета |
+| --- | --- |
+| Windows | `.exe` (установщик NSIS) |
+| Debian Linux | `.deb` |
+| Arch Linux | AppImage |
 
 ## Структура
 

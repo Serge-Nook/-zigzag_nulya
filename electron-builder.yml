@@ -23,7 +23,10 @@ mac:
   category: public.app-category.utilities
 linux:
   target:
+    - deb
     - AppImage
-  maintainer: nook-bat
+  maintainer: Горшков Сергей Владимирович <info@nookbat.ru>
+  vendor: Горшков Сергей Владимирович
   category: Utility
+  artifactName: ${name}-${version}.${ext}
 npmRebuild: false

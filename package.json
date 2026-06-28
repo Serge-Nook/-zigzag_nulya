@@ -3,7 +3,11 @@
   "version": "0.1.0",
   "description": "Зигзаг Нуля — построение и мониторинг карты сетевой топологии + инвентаризация IT-активов",
   "main": "./out/main/index.js",
-  "author": "NOOK",
+  "homepage": "https://nookbat.ru",
+  "author": {
+    "name": "Горшков Сергей Владимирович",
+    "url": "https://nookbat.ru"
+  },
   "license": "MIT",
   "type": "module",
   "scripts": {

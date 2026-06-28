@@ -497,6 +497,27 @@ button {
   gap: 8px;
   margin-top: 16px;
 }
+.about {
+  margin-top: 16px;
+}
+.about-line {
+  font-size: 13px;
+  color: var(--text, #0f172a);
+  margin: 2px 0;
+}
+.about .btn-link {
+  font-size: 13px;
+  padding: 0;
+}
+.about-packages {
+  margin: 4px 0 0;
+  padding-left: 20px;
+  font-size: 13px;
+  color: #475569;
+}
+.about-packages li {
+  margin: 2px 0;
+}
 .note-view {
   white-space: pre-wrap;
   background: #f8fafc;

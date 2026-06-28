@@ -71,6 +71,27 @@ export default function SettingsModal({ onClose }: Props): JSX.Element {
           />
         </label>
 
+        <fieldset className="about">
+          <legend>О программе</legend>
+          <div className="about-line"><strong>Зигзаг&nbsp;Нуля</strong> v0.1.0</div>
+          <div className="about-line">Автор: Горшков Сергей Владимирович</div>
+          <div className="about-line">
+            Сайт:{' '}
+            <button
+              className="btn-link"
+              onClick={() => window.zigzag.shell.openExternal('https://nookbat.ru')}
+            >
+              https://nookbat.ru
+            </button>
+          </div>
+          <div className="about-line">Установочные пакеты:</div>
+          <ul className="about-packages">
+            <li>Windows — .exe (установщик NSIS)</li>
+            <li>Debian Linux — .deb</li>
+            <li>Arch Linux — AppImage</li>
+          </ul>
+        </fieldset>
+
         <div className="modal-actions">
           <button className="btn-primary" onClick={onClose}>Готово</button>
         </div>
