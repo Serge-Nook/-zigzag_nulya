@@ -13,6 +13,8 @@ export type DeviceType =
   | 'accessPoint'
   | 'cloud'
   | 'phone'
+  | 'camera'
+  | 'nas'
   | 'storage'
   | 'unknown'
 

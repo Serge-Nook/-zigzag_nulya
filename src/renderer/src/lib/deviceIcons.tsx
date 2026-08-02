@@ -15,7 +15,7 @@ export const DEVICE_ICONS: Record<DeviceType, IconDef> = {
     path: 'M3 13h18v6H3z M7 16h2v1H7z M11 16h2v1h-2z M15 16h2v1h-2z M8 12V6 M8 6l-2 2 M8 6l2 2 M16 12V6 M16 6l-2 2 M16 6l2 2'
   },
   switch: {
-    name: 'Коммутатор',
+    name: 'Коммутатор (свитч)',
     color: '#0891b2',
     path: 'M3 9h18v8H3z M6 12h2v2H6z M10 12h2v2h-2z M14 12h2v2h-2z M18 12h1v2h-1z M5 6h6 M11 6l-2-1.5 M11 6l-2 1.5'
   },
@@ -58,6 +58,16 @@ export const DEVICE_ICONS: Record<DeviceType, IconDef> = {
     name: 'IP-телефон',
     color: '#9333ea',
     path: 'M7 3h10v18H7z M9 5h6v3H9z M9 10h1v1H9z M11.5 10h1v1h-1z M14 10h1v1h-1z M9 13h1v1H9z M11.5 13h1v1h-1z M14 13h1v1h-1z'
+  },
+  camera: {
+    name: 'IP-камера',
+    color: '#0d9488',
+    path: 'M4 8h11v8H4z M15 10l5-3v10l-5-3 M7 12h.01 M4 19h11'
+  },
+  nas: {
+    name: 'NAS-сервер',
+    color: '#a16207',
+    path: 'M5 3h14v18H5z M8 6v12 M11 6v12 M14 6v12 M16.5 7h1v1h-1z M16.5 10h1v1h-1z'
   },
   storage: {
     name: 'Хранилище',

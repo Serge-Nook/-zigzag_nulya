@@ -14,7 +14,9 @@ export function guessType(sysServices?: number, sysDescr?: string): DeviceType {
   if (/access point|wireless|wlan|aironet|unifi/.test(d)) return 'accessPoint'
   if (/printer|jetdirect|laserjet|kyocera|xerox/.test(d)) return 'printer'
   if (/windows server|linux|ubuntu|centos|server/.test(d)) return 'server'
-  if (/nas|synology|qnap|storage/.test(d)) return 'storage'
+  if (/camera|ipcam|hikvision|dahua|axis|ip cam/.test(d)) return 'camera'
+  if (/nas|synology|qnap|truenas|freenas/.test(d)) return 'nas'
+  if (/storage|raid|san\b/.test(d)) return 'storage'
   if (typeof sysServices === 'number') {
     // bit 0x04 = internet (L3 routing), 0x02 = datalink (L2 switching)
     if (sysServices & 0x04) return 'router'

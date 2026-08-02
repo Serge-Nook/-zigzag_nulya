@@ -66,6 +66,8 @@ function defaultLabel(type: DeviceType): string {
     accessPoint: 'Точка доступа',
     cloud: 'Облако',
     phone: 'IP-телефон',
+    camera: 'IP-камера',
+    nas: 'NAS-сервер',
     storage: 'Хранилище',
     unknown: 'Устройство'
   }
