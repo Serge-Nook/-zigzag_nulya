@@ -19,6 +19,9 @@ export default function TopBar({ onOpenSettings }: Props): JSX.Element {
   const setView = useStore((s) => s.setView)
   const gridVisible = useStore((s) => s.gridVisible)
   const toggleGrid = useStore((s) => s.toggleGrid)
+  const snapToGrid = useStore((s) => s.snapToGrid)
+  const toggleSnap = useStore((s) => s.toggleSnap)
+  const alignToGrid = useStore((s) => s.alignToGrid)
   const newProject = useStore((s) => s.newProject)
   const loadProject = useStore((s) => s.loadProject)
   const setFilePath = useStore((s) => s.setFilePath)
@@ -85,6 +88,16 @@ export default function TopBar({ onOpenSettings }: Props): JSX.Element {
 
       <div className="topbar-group">
         <button className={gridVisible ? 'active' : ''} onClick={toggleGrid}>Сетка</button>
+        <button
+          className={snapToGrid ? 'active' : ''}
+          onClick={toggleSnap}
+          title="Привязывать элементы к сетке при перемещении и размещении"
+        >
+          Привязка
+        </button>
+        <button onClick={alignToGrid} title="Выровнять все элементы схемы по сетке">
+          Выровнять
+        </button>
         <button onClick={onOpenSettings}>Настройки</button>
         <button
           className={alarmActive ? (muted ? 'alarm-muted' : 'alarm-on') : ''}

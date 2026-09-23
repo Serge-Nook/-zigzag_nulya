@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { Stage, Layer, Rect, Line, Text, Group, Transformer } from 'react-konva'
+import { Stage, Layer, Rect, Line, Text, Group, Transformer, Circle } from 'react-konva'
 import type Konva from 'konva'
 import { v4 as uuid } from 'uuid'
 import { useStore } from '../store/useStore'
 import { makeNode } from '../store/useStore'
 import DeviceNode from './DeviceNode'
 import type { Zone } from '../../../shared/types'
+import { GRID_STEP, snap } from '../lib/grid'
+import { resolveLinkStyle } from '../lib/linkStyles'
+import { assetsForNode, useInventory } from '../store/useInventory'
 
 interface Props {
   stageRef: React.MutableRefObject<Konva.Stage | null>
@@ -21,6 +24,10 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
   const linkSource = useStore((s) => s.linkSource)
   const setLinkSource = useStore((s) => s.setLinkSource)
   const gridVisible = useStore((s) => s.gridVisible)
+  const snapToGrid = useStore((s) => s.snapToGrid)
+  const linkMedium = useStore((s) => s.linkMedium)
+  const openCard = useStore((s) => s.openCard)
+  const hardware = useInventory((s) => s.hardware)
   const addNode = useStore((s) => s.addNode)
   const moveNode = useStore((s) => s.moveNode)
   const addLink = useStore((s) => s.addLink)
@@ -61,7 +68,12 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
   function relPointer(): { x: number; y: number } {
     const stage = stageRef.current
     if (!stage) return { x: 0, y: 0 }
-    return stage.getRelativePointerPosition() ?? { x: 0, y: 0 }
+    const p = stage.getRelativePointerPosition() ?? { x: 0, y: 0 }
+    return snapToGrid ? { x: snap(p.x), y: snap(p.y) } : p
+  }
+
+  function snapDrag(e: Konva.KonvaEventObject<DragEvent>): void {
+    if (snapToGrid) e.target.position({ x: snap(e.target.x()), y: snap(e.target.y()) })
   }
 
   function handleNodeClick(id: string): void {
@@ -69,7 +81,7 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
       if (!linkSource) {
         setLinkSource(id)
       } else {
-        addLink(linkSource, id)
+        addLink(linkSource, id, linkMedium === 'ethernet' ? undefined : { medium: linkMedium })
         setLinkSource(undefined)
         setTool({ kind: 'select' })
       }
@@ -110,8 +122,8 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
         ...draft,
         x: draft.width < 0 ? draft.x + draft.width : draft.x,
         y: draft.height < 0 ? draft.y + draft.height : draft.y,
-        width: Math.max(40, Math.abs(draft.width)),
-        height: Math.max(30, Math.abs(draft.height))
+        width: Math.max(snapToGrid ? GRID_STEP : 40, Math.abs(draft.width)),
+        height: Math.max(snapToGrid ? GRID_STEP : 30, Math.abs(draft.height))
       }
       addZone(norm)
       setDraft(null)
@@ -160,7 +172,7 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
 
   const gridLines: JSX.Element[] = []
   if (gridVisible) {
-    const step = 40
+    const step = GRID_STEP
     const extent = 4000
     for (let i = -extent; i <= extent; i += step) {
       gridLines.push(
@@ -213,6 +225,7 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
                   e.cancelBubble = true
                   select({ kind: 'zone', id: z.id })
                 }}
+                onDragMove={snapDrag}
                 onDragEnd={(e) => updateZone(z.id, { x: e.target.x(), y: e.target.y() })}
                 onTransformEnd={(e) => {
                   const node = e.target as Konva.Rect
@@ -220,11 +233,15 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
                   const sy = node.scaleY()
                   node.scaleX(1)
                   node.scaleY(1)
+                  const s = (v: number): number => (snapToGrid ? snap(v) : v)
+                  const x = s(node.x())
+                  const y = s(node.y())
+                  node.position({ x, y })
                   updateZone(z.id, {
-                    x: node.x(),
-                    y: node.y(),
-                    width: Math.max(40, node.width() * sx),
-                    height: Math.max(30, node.height() * sy)
+                    x,
+                    y,
+                    width: Math.max(snapToGrid ? GRID_STEP : 40, s(node.width() * sx)),
+                    height: Math.max(snapToGrid ? GRID_STEP : 30, s(node.height() * sy))
                   })
                 }}
               />
@@ -261,25 +278,43 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
             const b = nodeById.get(l.toNodeId)
             if (!a || !b) return null
             const isSel = selection?.kind === 'link' && selection.id === l.id
-            const color = l.color ?? (l.source === 'manual' ? '#64748b' : '#2563eb')
+            const st = resolveLinkStyle(l)
+            const mx = (a.x + b.x) / 2
+            const my = (a.y + b.y) / 2
+            const pick = (e: Konva.KonvaEventObject<MouseEvent>): void => {
+              e.cancelBubble = true
+              select({ kind: 'link', id: l.id })
+            }
             return (
               <Group key={l.id}>
+                {l.medium === 'optical' && (
+                  <Line
+                    points={[a.x, a.y, b.x, b.y]}
+                    stroke={isSel ? '#f97316' : st.color}
+                    strokeWidth={st.width + 5}
+                    opacity={0.25}
+                    listening={false}
+                  />
+                )}
                 <Line
                   points={[a.x, a.y, b.x, b.y]}
-                  stroke={isSel ? '#f97316' : color}
-                  strokeWidth={isSel ? 4 : 2}
-                  dash={l.dashed || l.source === 'traceroute' ? [6, 4] : undefined}
+                  stroke={isSel ? '#f97316' : st.color}
+                  strokeWidth={isSel ? st.width + 2 : st.width}
+                  dash={st.dash}
                   hitStrokeWidth={14}
-                  onClick={(e) => {
-                    e.cancelBubble = true
-                    select({ kind: 'link', id: l.id })
-                  }}
+                  onClick={pick}
                 />
+                {st.badge && (
+                  <Group x={mx} y={my} onClick={pick}>
+                    <Circle radius={10} fill="#ffffff" stroke={st.color} strokeWidth={1.5} />
+                    <Text text={st.badge} x={-7} y={-6} fontSize={11} />
+                  </Group>
+                )}
                 {l.label && (
                   <Text
                     text={l.label}
                     x={(a.x + b.x) / 2 - 40}
-                    y={(a.y + b.y) / 2 - 16}
+                    y={my - (st.badge ? 26 : 16)}
                     width={80}
                     align="center"
                     fontSize={11}
@@ -300,6 +335,9 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
               node={n}
               selected={selection?.kind === 'node' && selection.id === n.id}
               linkArmed={linkSource === n.id}
+              snapToGrid={snapToGrid}
+              assets={assetsForNode(hardware, n)}
+              onOpenAsset={(id) => openCard({ kind: 'hardware', id })}
               onSelect={() => handleNodeClick(n.id)}
               onMove={(x, y) => moveNode(n.id, x, y)}
               onOpenNote={() => onOpenNote(n.id)}
@@ -325,6 +363,7 @@ export default function TopologyCanvas({ stageRef, onOpenNote }: Props): JSX.Ele
                 e.cancelBubble = true
                 select({ kind: 'label', id: t.id })
               }}
+              onDragMove={snapDrag}
               onDragEnd={(e) => useStore.getState().updateLabel(t.id, { x: e.target.x(), y: e.target.y() })}
             />
           ))}

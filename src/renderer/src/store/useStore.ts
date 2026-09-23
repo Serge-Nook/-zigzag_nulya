@@ -3,12 +3,14 @@ import { v4 as uuid } from 'uuid'
 import {
   ZIGZAG_FILE_VERSION,
   type DeviceType,
+  type LinkMedium,
   type TextLabel,
   type TopologyLink,
   type TopologyNode,
   type ZigzagProject,
   type Zone
 } from '../../../shared/types'
+import { snap } from '../lib/grid'
 
 export type View = 'topology' | 'discovery' | 'inventory' | 'traps'
 
@@ -22,6 +24,12 @@ export type Tool =
 export type SelectionKind = 'node' | 'link' | 'zone' | 'label'
 export interface Selection {
   kind: SelectionKind
+  id: string
+}
+
+export type AssetKind = 'hardware' | 'software'
+export interface AssetRef {
+  kind: AssetKind
   id: string
 }
 
@@ -69,6 +77,8 @@ function defaultLabel(type: DeviceType): string {
     camera: 'IP-камера',
     nas: 'NAS-сервер',
     storage: 'Хранилище',
+    mediaConverter: 'Медиаконвертер',
+    networkController: 'Сетевой контроллер',
     unknown: 'Устройство'
   }
   return map[type]
@@ -83,12 +93,26 @@ interface StoreState {
   selection?: Selection
   linkSource?: string
   gridVisible: boolean
+  snapToGrid: boolean
+  linkMedium: LinkMedium
+  /** Asset card currently shown in the global card modal. */
+  card?: AssetRef
+  /** Asset the inventory view should open for editing. */
+  editRequest?: AssetRef
 
   setView: (v: View) => void
   setTool: (t: Tool) => void
   select: (s?: Selection) => void
   setLinkSource: (id?: string) => void
   toggleGrid: () => void
+  toggleSnap: () => void
+  setLinkMedium: (m: LinkMedium) => void
+  alignToGrid: () => void
+  openCard: (ref: AssetRef) => void
+  closeCard: () => void
+  requestEdit: (ref: AssetRef) => void
+  clearEditRequest: () => void
+  showNode: (nodeId: string) => void
 
   newProject: () => void
   loadProject: (p: ZigzagProject, path?: string) => void
@@ -122,12 +146,38 @@ export const useStore = create<StoreState>((set, get) => ({
   view: 'topology',
   tool: { kind: 'select' },
   gridVisible: true,
+  snapToGrid: false,
+  linkMedium: 'ethernet',
 
   setView: (v) => set({ view: v }),
   setTool: (t) => set({ tool: t, linkSource: undefined }),
   select: (s) => set({ selection: s }),
   setLinkSource: (id) => set({ linkSource: id }),
   toggleGrid: () => set((s) => ({ gridVisible: !s.gridVisible })),
+  toggleSnap: () => set((s) => ({ snapToGrid: !s.snapToGrid })),
+  setLinkMedium: (m) => set({ linkMedium: m }),
+  alignToGrid: () =>
+    set((s) => ({
+      project: {
+        ...s.project,
+        nodes: s.project.nodes.map((n) => ({ ...n, x: snap(n.x), y: snap(n.y) })),
+        zones: s.project.zones.map((z) => ({
+          ...z,
+          x: snap(z.x),
+          y: snap(z.y),
+          width: Math.max(snap(z.width), 40),
+          height: Math.max(snap(z.height), 40)
+        })),
+        labels: s.project.labels.map((l) => ({ ...l, x: snap(l.x), y: snap(l.y) }))
+      },
+      dirty: true
+    })),
+  openCard: (ref) => set({ card: ref }),
+  closeCard: () => set({ card: undefined }),
+  requestEdit: (ref) => set({ card: undefined, editRequest: ref, view: 'inventory' }),
+  clearEditRequest: () => set({ editRequest: undefined }),
+  showNode: (nodeId) =>
+    set({ card: undefined, view: 'topology', tool: { kind: 'select' }, selection: { kind: 'node', id: nodeId } }),
 
   newProject: () => set({ project: emptyProject(), filePath: undefined, dirty: false, selection: undefined }),
   loadProject: (p, path) => set({ project: p, filePath: path, dirty: false, selection: undefined }),
@@ -175,7 +225,8 @@ export const useStore = create<StoreState>((set, get) => ({
         source: partial?.source ?? 'manual',
         label: partial?.label,
         dashed: partial?.dashed,
-        color: partial?.color
+        color: partial?.color,
+        medium: partial?.medium
       }
       return { project: { ...s.project, links: [...s.project.links, link] }, dirty: true }
     }),

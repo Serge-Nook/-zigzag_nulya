@@ -63,6 +63,34 @@ export async function exportPdf(
   }
 }
 
+/** Renders an HTML document off-screen with Chromium and saves it as PDF. */
+export async function exportHtmlPdf(
+  win: BrowserWindow | null,
+  html: string,
+  defaultName: string
+): Promise<{ canceled: boolean; path?: string; error?: string }> {
+  const res = await dialog.showSaveDialog(win!, {
+    title: 'Сохранить в PDF',
+    defaultPath: `${defaultName}.pdf`,
+    filters: [{ name: 'PDF', extensions: ['pdf'] }]
+  })
+  if (res.canceled || !res.filePath) return { canceled: true }
+  const offscreen = new BrowserWindow({
+    show: false,
+    webPreferences: { javascript: false, sandbox: true }
+  })
+  try {
+    await offscreen.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+    const pdf = await offscreen.webContents.printToPDF({ pageSize: 'A4', printBackground: true })
+    await fs.writeFile(res.filePath, pdf)
+    return { canceled: false, path: res.filePath }
+  } catch (e) {
+    return { canceled: false, error: (e as Error).message }
+  } finally {
+    offscreen.destroy()
+  }
+}
+
 export async function saveCsv(
   win: BrowserWindow | null,
   csv: string,

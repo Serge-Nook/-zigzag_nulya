@@ -7,10 +7,12 @@ import type {
   HardwareAsset,
   ScanOptions,
   SoftwareLicense,
+  UpgradeCriteria,
+  UpgradePlanEntry,
   ZigzagProject
 } from '../shared/types'
 import { openProject, saveProject } from './files/project'
-import { exportPng, exportSvg, exportPdf, saveCsv } from './files/exports'
+import { exportPng, exportSvg, exportPdf, exportHtmlPdf, saveCsv } from './files/exports'
 import { getSettings, setSettings, pickAlarmSound, readAlarmData } from './files/settings'
 import { pingHost } from './network/ping'
 import { scanNetwork } from './network/scan'
@@ -47,6 +49,9 @@ export async function registerIpc(): Promise<void> {
   )
   ipcMain.handle(IPC.exportPdf, (_e, bytes: ArrayBuffer, name: string) =>
     exportPdf(focusedWin(), bytes, name)
+  )
+  ipcMain.handle(IPC.exportHtmlPdf, (_e, html: string, name: string) =>
+    exportHtmlPdf(focusedWin(), html, name)
   )
 
   // ---- Settings ----
@@ -106,7 +111,18 @@ export async function registerIpc(): Promise<void> {
     (_e, c: Omit<ConfigChange, 'id' | 'timestamp'>) => inv.addConfigChange(c)
   )
   ipcMain.handle(IPC.invUpgradePlan, () => inv.upgradePlan())
-  ipcMain.handle(IPC.invExportCsv, async (_e, table: 'hardware' | 'software') => {
+  ipcMain.handle(IPC.invGetUpgradeCriteria, () => inv.getUpgradeCriteria())
+  ipcMain.handle(IPC.invSetUpgradeCriteria, (_e, c: Partial<UpgradeCriteria>) =>
+    inv.setUpgradeCriteria(c)
+  )
+  ipcMain.handle(
+    IPC.invUpsertUpgradeEntry,
+    (_e, entry: Partial<UpgradePlanEntry> & { assetId: string }) => inv.upsertUpgradeEntry(entry)
+  )
+  ipcMain.handle(IPC.invDeleteUpgradeEntry, (_e, assetId: string) =>
+    inv.deleteUpgradeEntry(assetId)
+  )
+  ipcMain.handle(IPC.invExportCsv, async (_e, table: inv.CsvTable) => {
     const csv = inv.exportCsv(table)
     return saveCsv(focusedWin(), csv, `inventory-${table}`)
   })

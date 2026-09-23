@@ -16,6 +16,8 @@ export type DeviceType =
   | 'camera'
   | 'nas'
   | 'storage'
+  | 'mediaConverter'
+  | 'networkController'
   | 'unknown'
 
 export interface PingWidget {
@@ -59,6 +61,9 @@ export interface TopologyNode {
 
 export type LinkStyle = 'auto' | 'manual'
 
+/** Physical / logical medium of a communication channel. */
+export type LinkMedium = 'ethernet' | 'secure' | 'wifi' | 'optical' | 'radio'
+
 export interface TopologyLink {
   id: string
   fromNodeId: string
@@ -69,6 +74,7 @@ export interface TopologyLink {
   source: 'manual' | 'snmp' | 'lldp' | 'traceroute'
   dashed?: boolean
   color?: string
+  medium?: LinkMedium
 }
 
 export interface Zone {
@@ -213,14 +219,43 @@ export interface ConfigChange {
   details: string
 }
 
-export interface UpgradePlanItem {
+export interface UpgradeCriteria {
+  minRamGb: number
+  minDiskGb: number
+  /** Case-insensitive substrings; an asset whose OS contains any of them is outdated. */
+  outdatedOs: string[]
+  /** Asset types included in the automatic analysis; empty means all types. */
+  includeTypes: string[]
+  /** Flag assets whose warranty has expired. */
+  checkWarranty: boolean
+}
+
+export type UpgradeStatus = 'proposed' | 'planned' | 'inProgress' | 'done' | 'rejected'
+export type UpgradePriority = 'low' | 'medium' | 'high'
+
+/** User-editable part of an upgrade plan entry, persisted per asset. */
+export interface UpgradePlanEntry {
   assetId: string
+  status: UpgradeStatus
+  priority: UpgradePriority
+  plannedDate: string
+  budget: number | null
+  recommendation: string
+  comment: string
+  /** Added to the plan manually (kept even if the asset meets the criteria). */
+  manual: boolean
+}
+
+export interface UpgradePlanItem extends UpgradePlanEntry {
   name: string
+  type: string
   cpu: string
   ramGb: number | null
   diskGb: number | null
+  os: string
   reason: string
-  recommendation: string
+  /** True if the asset currently fails the automatic criteria. */
+  auto: boolean
 }
 
 export interface InventoryStats {

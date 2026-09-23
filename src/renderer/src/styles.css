@@ -589,3 +589,140 @@ button {
   background: #dbeafe;
   color: #1e40af;
 }
+
+/* ---- Palette channel selector ---- */
+.palette-field {
+  display: block;
+  font-size: 11px;
+  color: #94a3b8;
+  margin: 2px 0 8px;
+}
+.palette-field select {
+  width: 100%;
+  margin-top: 3px;
+  padding: 5px 6px;
+  border-radius: 6px;
+  border: 1px solid #475569;
+  background: #1e293b;
+  color: #e2e8f0;
+}
+
+/* ---- Linked inventory assets (inspector) ---- */
+.linked-asset {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 13px;
+  padding: 4px 0;
+  border-bottom: 1px dashed #e2e8f0;
+}
+.linked-asset-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.inspector .linked-asset-actions .btn-link {
+  margin-top: 0;
+}
+
+/* ---- Sortable tables ---- */
+.table-scroll {
+  overflow-x: auto;
+}
+.data-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+.data-table th.sortable:hover,
+.data-table th.sorted {
+  color: var(--text);
+}
+.sort-arrow {
+  font-size: 10px;
+  opacity: 0.6;
+}
+.data-table tr.clickable {
+  cursor: pointer;
+}
+.data-table td.nowrap {
+  white-space: nowrap;
+}
+
+/* ---- Upgrade plan ---- */
+fieldset.criteria {
+  margin: 0 0 12px;
+}
+.form-row label.grow {
+  flex: 1;
+  min-width: 220px;
+}
+.criteria-types {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+  font-size: 13px;
+}
+.plan-table input,
+.plan-table select {
+  width: 100%;
+  min-width: 90px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  font-size: 12px;
+}
+.plan-table input.num {
+  min-width: 70px;
+}
+.plan-table .btn-link {
+  padding: 0;
+  text-align: left;
+}
+.plan-table tr.prio-high td:first-child {
+  box-shadow: inset 3px 0 0 var(--danger);
+}
+.plan-table tr.status-done,
+.plan-table tr.status-rejected {
+  opacity: 0.6;
+}
+
+/* ---- Asset card ---- */
+.asset-card-head {
+  border-bottom: 2px solid var(--primary);
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+.asset-card-head h3 {
+  margin: 0;
+}
+.asset-card-body h4 {
+  margin: 12px 0 4px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--primary);
+}
+.kv-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.kv-table th,
+.kv-table td {
+  text-align: left;
+  padding: 4px 6px;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: top;
+}
+.kv-table th {
+  width: 36%;
+  color: var(--muted);
+  font-weight: 600;
+}
+.kv-table td.pre {
+  white-space: pre-wrap;
+}

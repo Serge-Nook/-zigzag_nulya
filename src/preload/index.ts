@@ -14,6 +14,8 @@ import type {
   SnmpVarbind,
   SoftwareLicense,
   TracerouteHop,
+  UpgradeCriteria,
+  UpgradePlanEntry,
   UpgradePlanItem,
   ZigzagProject
 } from '../shared/types'
@@ -34,7 +36,12 @@ const api = {
   exports: {
     png: (dataUrl: string, name: string) => ipcRenderer.invoke(IPC.exportPng, dataUrl, name),
     svg: (svg: string, name: string) => ipcRenderer.invoke(IPC.exportSvg, svg, name),
-    pdf: (bytes: ArrayBuffer, name: string) => ipcRenderer.invoke(IPC.exportPdf, bytes, name)
+    pdf: (bytes: ArrayBuffer, name: string) => ipcRenderer.invoke(IPC.exportPdf, bytes, name),
+    htmlPdf: (
+      html: string,
+      name: string
+    ): Promise<{ canceled: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke(IPC.exportHtmlPdf, html, name)
   },
   settings: {
     get: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.settingsGet),
@@ -92,7 +99,18 @@ const api = {
     addConfigChange: (c: Omit<ConfigChange, 'id' | 'timestamp'>): Promise<ConfigChange> =>
       ipcRenderer.invoke(IPC.invAddConfigChange, c),
     upgradePlan: (): Promise<UpgradePlanItem[]> => ipcRenderer.invoke(IPC.invUpgradePlan),
-    exportCsv: (table: 'hardware' | 'software'): Promise<{ canceled: boolean; path?: string }> =>
+    getUpgradeCriteria: (): Promise<UpgradeCriteria> =>
+      ipcRenderer.invoke(IPC.invGetUpgradeCriteria),
+    setUpgradeCriteria: (c: Partial<UpgradeCriteria>): Promise<UpgradeCriteria> =>
+      ipcRenderer.invoke(IPC.invSetUpgradeCriteria, c),
+    upsertUpgradeEntry: (
+      e: Partial<UpgradePlanEntry> & { assetId: string }
+    ): Promise<UpgradePlanEntry> => ipcRenderer.invoke(IPC.invUpsertUpgradeEntry, e),
+    deleteUpgradeEntry: (assetId: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.invDeleteUpgradeEntry, assetId),
+    exportCsv: (
+      table: 'hardware' | 'software' | 'upgrade'
+    ): Promise<{ canceled: boolean; path?: string }> =>
       ipcRenderer.invoke(IPC.invExportCsv, table)
   }
 }

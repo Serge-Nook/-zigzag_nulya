@@ -11,6 +11,8 @@ import InventoryView from './components/InventoryView'
 import TrapsPanel from './components/TrapsPanel'
 import NoteModal from './components/NoteModal'
 import SettingsModal from './components/SettingsModal'
+import AssetCardModal from './components/AssetCardModal'
+import { useInventory } from './store/useInventory'
 
 export default function App(): JSX.Element {
   useMonitorController()
@@ -19,12 +21,17 @@ export default function App(): JSX.Element {
   const stageRef = useRef<Konva.Stage | null>(null)
   const [noteNodeId, setNoteNodeId] = useState<string | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  const refreshInventory = useInventory((s) => s.refresh)
+
+  useEffect(() => {
+    refreshInventory()
+  }, [refreshInventory, view])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       const target = e.target as HTMLElement
       const typing = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable
-      if (!typing && (e.key === 'Delete' || e.key === 'Backspace')) {
+      if (!typing && !useStore.getState().card && (e.key === 'Delete' || e.key === 'Backspace')) {
         deleteSelection()
       }
     }
@@ -50,6 +57,7 @@ export default function App(): JSX.Element {
 
       {noteNodeId && <NoteModal nodeId={noteNodeId} onClose={() => setNoteNodeId(null)} />}
       {settingsOpen && <SettingsModal onClose={() => setSettingsOpen(false)} />}
+      <AssetCardModal />
     </div>
   )
 }

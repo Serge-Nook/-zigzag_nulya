@@ -8,6 +8,7 @@ export const IPC = {
   exportPng: 'export:png',
   exportSvg: 'export:svg',
   exportPdf: 'export:pdf',
+  exportHtmlPdf: 'export:htmlPdf',
   // settings
   settingsGet: 'settings:get',
   settingsSet: 'settings:set',
@@ -38,5 +39,9 @@ export const IPC = {
   invListConfigHistory: 'inv:listConfigHistory',
   invAddConfigChange: 'inv:addConfigChange',
   invUpgradePlan: 'inv:upgradePlan',
+  invGetUpgradeCriteria: 'inv:getUpgradeCriteria',
+  invSetUpgradeCriteria: 'inv:setUpgradeCriteria',
+  invUpsertUpgradeEntry: 'inv:upsertUpgradeEntry',
+  invDeleteUpgradeEntry: 'inv:deleteUpgradeEntry',
   invExportCsv: 'inv:exportCsv'
 } as const
