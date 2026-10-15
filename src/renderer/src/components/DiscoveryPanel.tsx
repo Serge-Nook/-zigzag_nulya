@@ -1,13 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useStore, makeNode } from '../store/useStore'
 import { DEVICE_ICONS } from '../lib/deviceIcons'
-import type {
-  DiscoveredHost,
-  LocalNetwork,
-  LldpNeighbor,
-  SnmpVarbind,
-  TracerouteHop
-} from '../../../shared/types'
+import type { DiscoveredHost, LocalNetwork, TracerouteHop } from '../../../shared/types'
 
 export default function DiscoveryPanel(): JSX.Element {
   const addNode = useStore((s) => s.addNode)
@@ -15,8 +9,8 @@ export default function DiscoveryPanel(): JSX.Element {
   const setView = useStore((s) => s.setView)
 
   const [cidr, setCidr] = useState('192.168.1.0/24')
-  const [community, setCommunity] = useState('public')
-  const [resolve, setResolve] = useState(true)
+  const [community, setCommunity] = useState('')
+  const [resolve, setResolve] = useState(false)
   const [scanning, setScanning] = useState(false)
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [hosts, setHosts] = useState<DiscoveredHost[]>([])
@@ -25,7 +19,6 @@ export default function DiscoveryPanel(): JSX.Element {
   const [netNote, setNetNote] = useState('')
 
   useEffect(() => {
-    window.zigzag.settings.get().then((s) => setCommunity(s.defaultSnmpCommunity))
     const off = window.zigzag.net.onScanProgress((p) => setProgress({ done: p.done, total: p.total }))
     return off
   }, [])
@@ -111,7 +104,7 @@ export default function DiscoveryPanel(): JSX.Element {
             </label>
           )}
           <label>SNMP community
-            <input value={community} onChange={(e) => setCommunity(e.target.value)} />
+            <input value={community} onChange={(e) => setCommunity(e.target.value)} placeholder="не опрашивать" />
           </label>
           <label className="inline">
             <input type="checkbox" checked={resolve} onChange={(e) => setResolve(e.target.checked)} />
@@ -159,95 +152,43 @@ export default function DiscoveryPanel(): JSX.Element {
         )}
       </section>
 
-      <DiagnosticsTools defaultCommunity={community} />
+      <DiagnosticsTools />
     </div>
   )
 }
 
-function DiagnosticsTools({ defaultCommunity }: { defaultCommunity: string }): JSX.Element {
+function DiagnosticsTools(): JSX.Element {
   const [trTarget, setTrTarget] = useState('8.8.8.8')
   const [hops, setHops] = useState<TracerouteHop[]>([])
   const [trBusy, setTrBusy] = useState(false)
-
-  const [snmpHost, setSnmpHost] = useState('192.168.1.1')
-  const [oid, setOid] = useState('1.3.6.1.2.1.1')
-  const [vbs, setVbs] = useState<SnmpVarbind[]>([])
-  const [snmpBusy, setSnmpBusy] = useState(false)
-
-  const [lldpHost, setLldpHost] = useState('192.168.1.1')
-  const [neighbors, setNeighbors] = useState<LldpNeighbor[]>([])
-  const [lldpBusy, setLldpBusy] = useState(false)
   const [msg, setMsg] = useState('')
 
   async function runTrace(): Promise<void> {
     setTrBusy(true); setHops([]); setMsg('')
-    try { setHops(await window.zigzag.net.traceroute(trTarget)) }
-    catch (e) { setMsg('Traceroute: ' + (e as Error).message) }
+    try {
+      const res = await window.zigzag.net.traceroute(trTarget)
+      setHops(res)
+      if (res.length === 0) setMsg('Traceroute: нет ответа')
+    }
+    catch (e) { setMsg('Traceroute: ' + (e as Error).message.replace(/^Error invoking remote method '[^']+': (Error: )?/, '')) }
     finally { setTrBusy(false) }
-  }
-  async function runWalk(): Promise<void> {
-    setSnmpBusy(true); setVbs([]); setMsg('')
-    try { setVbs(await window.zigzag.net.snmpWalk(snmpHost, oid, defaultCommunity)) }
-    catch (e) { setMsg('SNMP: ' + (e as Error).message) }
-    finally { setSnmpBusy(false) }
-  }
-  async function runLldp(): Promise<void> {
-    setLldpBusy(true); setNeighbors([]); setMsg('')
-    try { setNeighbors(await window.zigzag.net.lldp(lldpHost, defaultCommunity)) }
-    catch (e) { setMsg('LLDP: ' + (e as Error).message) }
-    finally { setLldpBusy(false) }
   }
 
   return (
     <section className="card">
-      <h3>Диагностика и опрос (Traceroute / SNMP / LLDP)</h3>
+      <h3>Диагностика (Traceroute)</h3>
       {msg && <div className="error">{msg}</div>}
-      <div className="diag-grid">
-        <div>
-          <div className="form-row">
-            <label>Traceroute до
-              <input value={trTarget} onChange={(e) => setTrTarget(e.target.value)} />
-            </label>
-            <button disabled={trBusy} onClick={runTrace}>{trBusy ? '…' : 'Трассировка'}</button>
-          </div>
-          <ul className="result-list">
-            {hops.map((h) => (
-              <li key={h.hop}>{h.hop}. {h.ip} {h.rttMs != null ? `(${h.rttMs} мс)` : ''}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <div className="form-row">
-            <label>SNMP walk хост
-              <input value={snmpHost} onChange={(e) => setSnmpHost(e.target.value)} />
-            </label>
-            <label>OID
-              <input value={oid} onChange={(e) => setOid(e.target.value)} />
-            </label>
-            <button disabled={snmpBusy} onClick={runWalk}>{snmpBusy ? '…' : 'Walk'}</button>
-          </div>
-          <ul className="result-list">
-            {vbs.map((v) => (
-              <li key={v.oid}><code>{v.oid}</code> = {v.value}</li>
-            ))}
-          </ul>
-        </div>
-
-        <div>
-          <div className="form-row">
-            <label>LLDP соседи хоста
-              <input value={lldpHost} onChange={(e) => setLldpHost(e.target.value)} />
-            </label>
-            <button disabled={lldpBusy} onClick={runLldp}>{lldpBusy ? '…' : 'Опросить'}</button>
-          </div>
-          <ul className="result-list">
-            {neighbors.map((n, i) => (
-              <li key={i}>{n.remoteSysName} ← порт {n.localPort} ({n.remotePortId})</li>
-            ))}
-          </ul>
-        </div>
+      <div className="form-row">
+        <label>Traceroute до
+          <input value={trTarget} onChange={(e) => setTrTarget(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && !trBusy && runTrace()} />
+        </label>
+        <button disabled={trBusy} onClick={runTrace}>{trBusy ? 'Трассировка…' : 'Трассировка'}</button>
       </div>
+      <ul className="result-list">
+        {hops.map((h) => (
+          <li key={h.hop}>{h.hop}. {h.ip} {h.rttMs != null ? `(${h.rttMs} мс)` : ''}</li>
+        ))}
+      </ul>
     </section>
   )
 }
