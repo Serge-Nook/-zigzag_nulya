@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Group, Rect, Path, Text, Circle } from 'react-konva'
 import type Konva from 'konva'
-import type { TopologyNode } from '../../../shared/types'
+import type { HardwareAsset, TopologyNode } from '../../../shared/types'
 import { DEVICE_ICONS } from '../lib/deviceIcons'
+import { snap } from '../lib/grid'
 import { useMonitor } from '../store/useMonitor'
 
 export const NODE_W = 72
@@ -12,20 +13,26 @@ interface Props {
   node: TopologyNode
   selected: boolean
   linkArmed: boolean
+  snapToGrid: boolean
+  assets: HardwareAsset[]
   onSelect: () => void
   onMove: (x: number, y: number) => void
   onOpenNote: () => void
   onOpenWeb: () => void
+  onOpenAsset: (assetId: string) => void
 }
 
 export default function DeviceNode({
   node,
   selected,
   linkArmed,
+  snapToGrid,
+  assets,
   onSelect,
   onMove,
   onOpenNote,
-  onOpenWeb
+  onOpenWeb,
+  onOpenAsset
 }: Props): JSX.Element {
   const def = DEVICE_ICONS[node.type]
   const status = useMonitor((s) => s.statuses[node.id])
@@ -52,6 +59,9 @@ export default function DeviceNode({
       onClick={onSelect}
       onTap={onSelect}
       onDragStart={onSelect}
+      onDragMove={(e: Konva.KonvaEventObject<DragEvent>) => {
+        if (snapToGrid) e.target.position({ x: snap(e.target.x()), y: snap(e.target.y()) })
+      }}
       onDragEnd={(e: Konva.KonvaEventObject<DragEvent>) => onMove(e.target.x(), e.target.y())}
     >
       <Rect
@@ -96,6 +106,20 @@ export default function DeviceNode({
           align="center"
           fontSize={10}
           fill="#64748b"
+          listening={false}
+        />
+      )}
+      {assets.length > 0 && (
+        <Text
+          text={`📋 ${assets.map((a) => a.name).join(', ')}`}
+          x={-NODE_W}
+          y={NODE_H / 2 + (node.ip ? 36 : 22)}
+          width={NODE_W * 2}
+          align="center"
+          fontSize={10}
+          fill="#4f46e5"
+          ellipsis
+          wrap="none"
           listening={false}
         />
       )}
@@ -146,6 +170,32 @@ export default function DeviceNode({
         >
           <Circle radius={9} fill="#f59e0b" />
           <Text text="✏️" x={-8} y={-7} fontSize={11} />
+        </Group>
+      )}
+
+      {assets.length > 0 && (
+        <Group
+          x={NODE_W / 2 - 4}
+          y={NODE_H / 2 - 4}
+          onClick={(e) => {
+            e.cancelBubble = true
+            onOpenAsset(assets[0].id)
+          }}
+          onTap={(e) => {
+            e.cancelBubble = true
+            onOpenAsset(assets[0].id)
+          }}
+          onMouseEnter={(e) => {
+            const c = e.target.getStage()?.container()
+            if (c) c.style.cursor = 'pointer'
+          }}
+          onMouseLeave={(e) => {
+            const c = e.target.getStage()?.container()
+            if (c) c.style.cursor = ''
+          }}
+        >
+          <Circle radius={9} fill="#4f46e5" />
+          <Text text="📋" x={-7} y={-6} fontSize={11} />
         </Group>
       )}
     </Group>

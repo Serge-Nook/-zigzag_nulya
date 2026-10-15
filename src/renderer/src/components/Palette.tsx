@@ -1,9 +1,12 @@
 import { useStore } from '../store/useStore'
 import { DEVICE_ICONS, DEVICE_TYPES, InlineIcon } from '../lib/deviceIcons'
+import { LINK_MEDIA, LINK_MEDIUM_TYPES } from '../lib/linkStyles'
 
 export default function Palette(): JSX.Element {
   const tool = useStore((s) => s.tool)
   const setTool = useStore((s) => s.setTool)
+  const linkMedium = useStore((s) => s.linkMedium)
+  const setLinkMedium = useStore((s) => s.setLinkMedium)
 
   const isPlacing = (t: string): boolean =>
     tool.kind === 'placeDevice' && tool.deviceType === t
@@ -24,6 +27,22 @@ export default function Palette(): JSX.Element {
       >
         ／ Связь
       </button>
+      <label className="palette-field" title="Тип канала для новых связей">
+        Канал
+        <select
+          value={linkMedium}
+          onChange={(e) => {
+            setLinkMedium(e.target.value as typeof linkMedium)
+            setTool({ kind: 'addLink' })
+          }}
+        >
+          {LINK_MEDIUM_TYPES.map((m) => (
+            <option key={m} value={m}>
+              {LINK_MEDIA[m].name}
+            </option>
+          ))}
+        </select>
+      </label>
       <button
         className={tool.kind === 'addZone' ? 'palette-tool active' : 'palette-tool'}
         onClick={() => setTool({ kind: 'addZone' })}

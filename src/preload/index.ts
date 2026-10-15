@@ -8,12 +8,15 @@ import type {
   HardwareAsset,
   InventoryStats,
   LldpNeighbor,
+  LocalNetwork,
   PingResult,
   ScanOptions,
   SnmpTrap,
   SnmpVarbind,
   SoftwareLicense,
   TracerouteHop,
+  UpgradeCriteria,
+  UpgradePlanEntry,
   UpgradePlanItem,
   ZigzagProject
 } from '../shared/types'
@@ -34,7 +37,12 @@ const api = {
   exports: {
     png: (dataUrl: string, name: string) => ipcRenderer.invoke(IPC.exportPng, dataUrl, name),
     svg: (svg: string, name: string) => ipcRenderer.invoke(IPC.exportSvg, svg, name),
-    pdf: (bytes: ArrayBuffer, name: string) => ipcRenderer.invoke(IPC.exportPdf, bytes, name)
+    pdf: (bytes: ArrayBuffer, name: string) => ipcRenderer.invoke(IPC.exportPdf, bytes, name),
+    htmlPdf: (
+      html: string,
+      name: string
+    ): Promise<{ canceled: boolean; path?: string; error?: string }> =>
+      ipcRenderer.invoke(IPC.exportHtmlPdf, html, name)
   },
   settings: {
     get: (): Promise<AppSettings> => ipcRenderer.invoke(IPC.settingsGet),
@@ -58,6 +66,7 @@ const api = {
       ipcRenderer.invoke(IPC.netSnmpGet, host, oids, community),
     snmpWalk: (host: string, oid: string, community: string): Promise<SnmpVarbind[]> =>
       ipcRenderer.invoke(IPC.netSnmpWalk, host, oid, community),
+    localNetworks: (): Promise<LocalNetwork[]> => ipcRenderer.invoke(IPC.netLocalNetworks),
     traceroute: (target: string): Promise<TracerouteHop[]> =>
       ipcRenderer.invoke(IPC.netTraceroute, target),
     lldp: (host: string, community: string): Promise<LldpNeighbor[]> =>
@@ -92,7 +101,18 @@ const api = {
     addConfigChange: (c: Omit<ConfigChange, 'id' | 'timestamp'>): Promise<ConfigChange> =>
       ipcRenderer.invoke(IPC.invAddConfigChange, c),
     upgradePlan: (): Promise<UpgradePlanItem[]> => ipcRenderer.invoke(IPC.invUpgradePlan),
-    exportCsv: (table: 'hardware' | 'software'): Promise<{ canceled: boolean; path?: string }> =>
+    getUpgradeCriteria: (): Promise<UpgradeCriteria> =>
+      ipcRenderer.invoke(IPC.invGetUpgradeCriteria),
+    setUpgradeCriteria: (c: Partial<UpgradeCriteria>): Promise<UpgradeCriteria> =>
+      ipcRenderer.invoke(IPC.invSetUpgradeCriteria, c),
+    upsertUpgradeEntry: (
+      e: Partial<UpgradePlanEntry> & { assetId: string }
+    ): Promise<UpgradePlanEntry> => ipcRenderer.invoke(IPC.invUpsertUpgradeEntry, e),
+    deleteUpgradeEntry: (assetId: string): Promise<void> =>
+      ipcRenderer.invoke(IPC.invDeleteUpgradeEntry, assetId),
+    exportCsv: (
+      table: 'hardware' | 'software' | 'upgrade'
+    ): Promise<{ canceled: boolean; path?: string }> =>
       ipcRenderer.invoke(IPC.invExportCsv, table)
   }
 }

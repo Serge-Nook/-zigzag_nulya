@@ -1,6 +1,73 @@
 import { useStore } from '../store/useStore'
 import { DEVICE_ICONS, DEVICE_TYPES } from '../lib/deviceIcons'
-import type { DeviceType } from '../../../shared/types'
+import { LINK_MEDIA, LINK_MEDIUM_TYPES, resolveLinkStyle } from '../lib/linkStyles'
+import { assetsForNode, useInventory } from '../store/useInventory'
+import type { DeviceType, LinkMedium, TopologyNode } from '../../../shared/types'
+
+function LinkedAssets({ node }: { node: TopologyNode }): JSX.Element {
+  const hardware = useInventory((s) => s.hardware)
+  const refresh = useInventory((s) => s.refresh)
+  const openCard = useStore((s) => s.openCard)
+  const updateNode = useStore((s) => s.updateNode)
+  const linked = assetsForNode(hardware, node)
+  const free = hardware.filter((a) => !linked.includes(a))
+
+  async function link(assetId: string): Promise<void> {
+    await window.zigzag.inventory.upsertHardware({ id: assetId, nodeId: node.id })
+    if (!node.assetId) updateNode(node.id, { assetId })
+    await refresh()
+  }
+
+  async function unlink(assetId: string): Promise<void> {
+    const a = hardware.find((x) => x.id === assetId)
+    if (a?.nodeId === node.id) {
+      await window.zigzag.inventory.upsertHardware({ id: assetId, nodeId: null })
+    }
+    if (node.assetId === assetId) updateNode(node.id, { assetId: undefined })
+    await refresh()
+  }
+
+  return (
+    <fieldset>
+      <legend>Оборудование (инвентаризация)</legend>
+      {linked.length === 0 && <div className="muted">Нет привязанного оборудования</div>}
+      {linked.map((a) => (
+        <div key={a.id} className="linked-asset">
+          <div>
+            <b>{a.name}</b>
+            <div className="muted">
+              {[a.vendor, a.model].filter(Boolean).join(' ') || a.type}
+              {a.inventoryNumber ? ` · Инв. № ${a.inventoryNumber}` : ''}
+              {a.serial ? ` · S/N ${a.serial}` : ''}
+            </div>
+          </div>
+          <div className="linked-asset-actions">
+            <button className="btn-link" onClick={() => openCard({ kind: 'hardware', id: a.id })}>
+              Карточка
+            </button>
+            <button className="btn-link" onClick={() => unlink(a.id)} title="Отвязать">
+              ✕
+            </button>
+          </div>
+        </div>
+      ))}
+      {free.length > 0 && (
+        <label>
+          Привязать
+          <select value="" onChange={(e) => e.target.value && link(e.target.value)}>
+            <option value="">— выберите единицу —</option>
+            {free.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.name}
+                {a.model ? ` (${a.model})` : ''}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+    </fieldset>
+  )
+}
 
 export default function Inspector(): JSX.Element {
   const selection = useStore((s) => s.selection)
@@ -43,6 +110,8 @@ export default function Inspector(): JSX.Element {
         <label>MAC
           <input value={node.mac ?? ''} onChange={(e) => updateNode(node.id, { mac: e.target.value })} placeholder="00:11:22:..." />
         </label>
+
+        <LinkedAssets node={node} />
 
         <fieldset>
           <legend>
@@ -174,9 +243,21 @@ export default function Inspector(): JSX.Element {
       <label>Подпись
         <input value={l.label ?? ''} onChange={(e) => updateLink(l.id, { label: e.target.value })} placeholder="напр. Gi0/1" />
       </label>
-      <label>Цвет
-        <input type="color" value={l.color ?? '#64748b'} onChange={(e) => updateLink(l.id, { color: e.target.value })} />
+      <label>Тип канала
+        <select value={l.medium ?? 'ethernet'} onChange={(e) => updateLink(l.id, { medium: e.target.value as LinkMedium })}>
+          {LINK_MEDIUM_TYPES.map((m) => (
+            <option key={m} value={m}>{LINK_MEDIA[m].name}</option>
+          ))}
+        </select>
       </label>
+      <label>Цвет
+        <input type="color" value={resolveLinkStyle(l).color} onChange={(e) => updateLink(l.id, { color: e.target.value })} />
+      </label>
+      {l.color && (
+        <button className="btn-link" onClick={() => updateLink(l.id, { color: undefined })}>
+          Сбросить цвет (по типу канала)
+        </button>
+      )}
       <label className="inline">
         <input type="checkbox" checked={!!l.dashed} onChange={(e) => updateLink(l.id, { dashed: e.target.checked })} />
         Пунктир

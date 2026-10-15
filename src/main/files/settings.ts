@@ -5,7 +5,7 @@ import type { AppSettings } from '../../shared/types'
 
 const DEFAULTS: AppSettings = {
   alarmSoundPath: null,
-  defaultSnmpCommunity: 'public',
+  defaultSnmpCommunity: '',
   defaultPingIntervalMs: 5000
 }
 

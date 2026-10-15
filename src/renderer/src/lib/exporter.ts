@@ -1,6 +1,7 @@
 import { jsPDF } from 'jspdf'
 import type { ZigzagProject } from '../../../shared/types'
 import { projectToSvg } from './svgExport'
+import { printHtml } from './assetCard'
 
 function svgDimensions(svg: string): { width: number; height: number } {
   const w = Number(/width="(\d+)"/.exec(svg)?.[1] ?? 800)
@@ -44,28 +45,10 @@ export async function exportProjectPng(project: ZigzagProject): Promise<void> {
 export async function printProject(project: ZigzagProject): Promise<void> {
   const svg = projectToSvg(project)
   const { dataUrl } = await svgToImage(svg, 2)
-  const iframe = document.createElement('iframe')
-  iframe.style.position = 'fixed'
-  iframe.style.right = '0'
-  iframe.style.bottom = '0'
-  iframe.style.width = '0'
-  iframe.style.height = '0'
-  iframe.style.border = '0'
-  document.body.appendChild(iframe)
-  const doc = iframe.contentWindow?.document
-  if (!doc) return
-  doc.open()
-  doc.write(
+  printHtml(
     `<html><head><title>${project.meta.name || 'topology'}</title></head><body style="margin:0">` +
       `<img src="${dataUrl}" style="width:100%"/></body></html>`
   )
-  doc.close()
-  const win = iframe.contentWindow!
-  win.focus()
-  setTimeout(() => {
-    win.print()
-    setTimeout(() => document.body.removeChild(iframe), 1000)
-  }, 250)
 }
 
 export async function exportProjectPdf(project: ZigzagProject): Promise<void> {

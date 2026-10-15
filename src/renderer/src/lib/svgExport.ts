@@ -1,5 +1,6 @@
 import type { ZigzagProject } from '../../../shared/types'
 import { DEVICE_ICONS } from './deviceIcons'
+import { resolveLinkStyle } from './linkStyles'
 
 export const NODE_W = 72
 export const NODE_H = 72
@@ -71,16 +72,24 @@ export function projectToSvg(project: ZigzagProject): string {
     const a = nodeById.get(l.fromNodeId)
     const c = nodeById.get(l.toNodeId)
     if (!a || !c) continue
-    const color = l.color ?? (l.source === 'manual' ? '#64748b' : '#2563eb')
-    const dash = l.dashed || l.source === 'traceroute' ? ' stroke-dasharray="6 4"' : ''
-    parts.push(
-      `<line x1="${a.x + ox}" y1="${a.y + oy}" x2="${c.x + ox}" y2="${c.y + oy}" stroke="${color}" stroke-width="2"${dash}/>`
-    )
-    if (l.label) {
-      const mx = (a.x + c.x) / 2 + ox
-      const my = (a.y + c.y) / 2 + oy
+    const st = resolveLinkStyle(l)
+    const dash = st.dash ? ` stroke-dasharray="${st.dash.join(' ')}"` : ''
+    const coords = `x1="${a.x + ox}" y1="${a.y + oy}" x2="${c.x + ox}" y2="${c.y + oy}"`
+    if (l.medium === 'optical') {
+      parts.push(`<line ${coords} stroke="${st.color}" stroke-width="${st.width + 5}" stroke-opacity="0.25"/>`)
+    }
+    parts.push(`<line ${coords} stroke="${st.color}" stroke-width="${st.width}"${dash}/>`)
+    const mx = (a.x + c.x) / 2 + ox
+    const my = (a.y + c.y) / 2 + oy
+    if (st.badge) {
       parts.push(
-        `<text x="${mx}" y="${my - 4}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#475569">${esc(l.label)}</text>`
+        `<circle cx="${mx}" cy="${my}" r="10" fill="#ffffff" stroke="${st.color}" stroke-width="1.5"/>`,
+        `<text x="${mx}" y="${my + 4}" text-anchor="middle" font-size="11">${st.badge}</text>`
+      )
+    }
+    if (l.label) {
+      parts.push(
+        `<text x="${mx}" y="${my - (st.badge ? 14 : 4)}" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#475569">${esc(l.label)}</text>`
       )
     }
   }

@@ -74,6 +74,16 @@ export const DEVICE_ICONS: Record<DeviceType, IconDef> = {
     color: '#b45309',
     path: 'M5 6c0-1.5 3-2.5 7-2.5s7 1 7 2.5v12c0 1.5-3 2.5-7 2.5s-7-1-7-2.5z M5 6c0 1.5 3 2.5 7 2.5s7-1 7-2.5 M5 11c0 1.5 3 2.5 7 2.5s7-1 7-2.5'
   },
+  mediaConverter: {
+    name: 'Оптический медиаконвертер',
+    color: '#ea580c',
+    path: 'M6 8h12v8H6z M8 11h3v2H8z M15 12m-1.5 0a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0 M2 12h4 M18 12h1.5 M20.5 12h1.5'
+  },
+  networkController: {
+    name: 'Сетевой контроллер',
+    color: '#4f46e5',
+    path: 'M8 9h8v6H8z M10 11h4v2h-4z M12 9V5 M8 12H4 M16 12h4 M12 15v4 M12 4m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0 M3 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0 M21 12m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0 M12 20m-1 0a1 1 0 1 0 2 0a1 1 0 1 0-2 0'
+  },
   unknown: {
     name: 'Устройство',
     color: '#6b7280',
