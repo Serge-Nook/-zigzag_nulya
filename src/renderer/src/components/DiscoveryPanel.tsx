@@ -3,6 +3,7 @@ import { useStore, makeNode } from '../store/useStore'
 import { DEVICE_ICONS } from '../lib/deviceIcons'
 import type {
   DiscoveredHost,
+  LocalNetwork,
   LldpNeighbor,
   SnmpVarbind,
   TracerouteHop
@@ -20,12 +21,34 @@ export default function DiscoveryPanel(): JSX.Element {
   const [progress, setProgress] = useState({ done: 0, total: 0 })
   const [hosts, setHosts] = useState<DiscoveredHost[]>([])
   const [error, setError] = useState('')
+  const [myNets, setMyNets] = useState<LocalNetwork[]>([])
+  const [netNote, setNetNote] = useState('')
 
   useEffect(() => {
     window.zigzag.settings.get().then((s) => setCommunity(s.defaultSnmpCommunity))
     const off = window.zigzag.net.onScanProgress((p) => setProgress({ done: p.done, total: p.total }))
     return off
   }, [])
+
+  function applyNet(n: LocalNetwork): void {
+    setCidr(n.cidr)
+    setNetNote(
+      `${n.iface}: ${n.address}/${n.prefix}` +
+        (n.prefix < 24 ? ` — подсеть велика, сканируется /24 вокруг адреса компьютера` : '')
+    )
+  }
+
+  async function detectMyNetwork(): Promise<void> {
+    setError('')
+    const nets = await window.zigzag.net.localNetworks()
+    setMyNets(nets)
+    if (nets.length === 0) {
+      setNetNote('')
+      setError('Не найдено активных сетевых подключений IPv4')
+      return
+    }
+    applyNet(nets[0])
+  }
 
   async function runScan(): Promise<void> {
     setError('')
@@ -69,8 +92,24 @@ export default function DiscoveryPanel(): JSX.Element {
         <h3>Автоматическое сканирование сети</h3>
         <div className="form-row">
           <label>Подсеть (CIDR)
-            <input value={cidr} onChange={(e) => setCidr(e.target.value)} placeholder="192.168.1.0/24" />
+            <input value={cidr} onChange={(e) => { setCidr(e.target.value); setNetNote('') }} placeholder="192.168.1.0/24" />
           </label>
+          <button disabled={scanning} onClick={detectMyNetwork} title="Подставить подсеть, в которой находится этот компьютер">
+            Моя сеть
+          </button>
+          {myNets.length > 1 && (
+            <label>Интерфейс
+              <select
+                value={myNets.findIndex((n) => n.cidr === cidr)}
+                onChange={(e) => applyNet(myNets[Number(e.target.value)])}
+              >
+                {myNets.findIndex((n) => n.cidr === cidr) < 0 && <option value={-1}>—</option>}
+                {myNets.map((n, i) => (
+                  <option key={`${n.iface}-${n.address}`} value={i}>{n.iface} — {n.cidr}</option>
+                ))}
+              </select>
+            </label>
+          )}
           <label>SNMP community
             <input value={community} onChange={(e) => setCommunity(e.target.value)} />
           </label>
@@ -82,6 +121,7 @@ export default function DiscoveryPanel(): JSX.Element {
             {scanning ? 'Сканирование…' : 'Сканировать'}
           </button>
         </div>
+        {netNote && <div className="muted">Моя сеть: {netNote}</div>}
         {scanning && progress.total > 0 && (
           <div className="progress">
             <div className="progress-bar" style={{ width: `${(progress.done / progress.total) * 100}%` }} />

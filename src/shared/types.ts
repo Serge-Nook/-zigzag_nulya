@@ -137,6 +137,15 @@ export interface ScanOptions {
   resolveHostnames?: boolean
 }
 
+export interface LocalNetwork {
+  iface: string
+  address: string
+  /** Network to scan, e.g. 192.168.1.0/24 (clamped to /24 for very large subnets). */
+  cidr: string
+  /** Actual interface prefix length before clamping. */
+  prefix: number
+}
+
 export interface PingResult {
   ip: string
   alive: boolean
@@ -175,6 +184,8 @@ export interface SnmpTrap {
 export interface HardwareAsset {
   id: string
   name: string
+  /** User-assigned inventory number, unique per unit by convention. */
+  inventoryNumber: string
   type: string
   vendor: string
   model: string

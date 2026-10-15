@@ -22,6 +22,7 @@ export const IPC = {
   netSnmpWalk: 'net:snmpWalk',
   netTraceroute: 'net:traceroute',
   netLldp: 'net:lldp',
+  netLocalNetworks: 'net:localNetworks',
   // snmp traps
   trapStart: 'trap:start',
   trapStop: 'trap:stop',

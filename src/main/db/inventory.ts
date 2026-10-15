@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS hardware (
   id TEXT PRIMARY KEY, name TEXT, type TEXT, vendor TEXT, model TEXT, serial TEXT,
   location TEXT, ip TEXT, mac TEXT, cpu TEXT, ramGb REAL, diskGb REAL, os TEXT,
   status TEXT, purchaseDate TEXT, warrantyUntil TEXT, notes TEXT, nodeId TEXT,
-  createdAt TEXT, updatedAt TEXT
+  createdAt TEXT, updatedAt TEXT, inventoryNumber TEXT
 );
 CREATE TABLE IF NOT EXISTS software (
   id TEXT PRIMARY KEY, name TEXT, vendor TEXT, version TEXT, licenseKey TEXT,
@@ -57,10 +57,16 @@ export async function initInventory(path: string): Promise<void> {
   }
   db = fileBuffer ? new SQL.Database(fileBuffer) : new SQL.Database()
   db.run(SCHEMA)
+  migrate(db)
   if (!fileBuffer) {
     seedSampleData()
     persist()
   }
+}
+
+function migrate(d: Database): void {
+  const cols = d.exec('PRAGMA table_info(hardware)')[0]?.values.map((r) => String(r[1])) ?? []
+  if (!cols.includes('inventoryNumber')) d.run("ALTER TABLE hardware ADD COLUMN inventoryNumber TEXT DEFAULT ''")
 }
 
 function persist(): void {
@@ -97,6 +103,7 @@ export function upsertHardware(input: Partial<HardwareAsset>): HardwareAsset {
   const a: HardwareAsset = {
     id: input.id ?? randomUUID(),
     name: input.name ?? existing?.name ?? 'Новое устройство',
+    inventoryNumber: (input.inventoryNumber ?? existing?.inventoryNumber ?? '').trim(),
     type: input.type ?? existing?.type ?? 'pc',
     vendor: input.vendor ?? existing?.vendor ?? '',
     model: input.model ?? existing?.model ?? '',
@@ -118,10 +125,10 @@ export function upsertHardware(input: Partial<HardwareAsset>): HardwareAsset {
   }
   requireDb().run(
     `INSERT OR REPLACE INTO hardware
-     (id,name,type,vendor,model,serial,location,ip,mac,cpu,ramGb,diskGb,os,status,purchaseDate,warrantyUntil,notes,nodeId,createdAt,updatedAt)
-     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+     (id,name,inventoryNumber,type,vendor,model,serial,location,ip,mac,cpu,ramGb,diskGb,os,status,purchaseDate,warrantyUntil,notes,nodeId,createdAt,updatedAt)
+     VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`,
     [
-      a.id, a.name, a.type, a.vendor, a.model, a.serial, a.location, a.ip, a.mac, a.cpu,
+      a.id, a.name, a.inventoryNumber, a.type, a.vendor, a.model, a.serial, a.location, a.ip, a.mac, a.cpu,
       a.ramGb, a.diskGb, a.os, a.status, a.purchaseDate, a.warrantyUntil, a.notes, a.nodeId,
       a.createdAt, a.updatedAt
     ]
@@ -141,7 +148,7 @@ function pick<T>(input: T | null | undefined, existing: T | null | undefined): T
 }
 
 function diffSummary(before: HardwareAsset, after: HardwareAsset): string {
-  const fields: (keyof HardwareAsset)[] = ['cpu', 'ramGb', 'diskGb', 'os', 'ip', 'status', 'location']
+  const fields: (keyof HardwareAsset)[] = ['inventoryNumber', 'cpu', 'ramGb', 'diskGb', 'os', 'ip', 'status', 'location']
   const changes = fields
     .filter((f) => String(before[f] ?? '') !== String(after[f] ?? ''))
     .map((f) => `${f}: ${before[f] ?? '—'} → ${after[f] ?? '—'}`)
@@ -366,10 +373,10 @@ export function exportCsv(table: CsvTable): string {
 }
 
 function seedSampleData(): void {
-  upsertHardware({ name: 'Core-Router-01', type: 'router', vendor: 'Cisco', model: 'ISR 4331', serial: 'CSR-001', location: 'Серверная', ip: '192.168.1.1', cpu: 'QorIQ', ramGb: 4, diskGb: 8, os: 'IOS XE', status: 'active' })
-  upsertHardware({ name: 'SW-Floor2', type: 'switch', vendor: 'HP', model: 'ProCurve 2530', serial: 'SW-220', location: '2 этаж', ip: '192.168.1.2', ramGb: 1, diskGb: 1, os: 'ArubaOS', status: 'active' })
-  upsertHardware({ name: 'PC-Buh-07', type: 'pc', vendor: 'Dell', model: 'OptiPlex 3070', serial: 'PC-707', location: 'Бухгалтерия', ip: '192.168.1.107', cpu: 'i3-9100', ramGb: 4, diskGb: 128, os: 'Windows 7', status: 'active' })
-  upsertHardware({ name: 'HP-LaserJet-Hall', type: 'printer', vendor: 'HP', model: 'LaserJet M404', serial: 'PRN-12', location: 'Холл', ip: '192.168.1.50', os: 'firmware', status: 'active' })
+  upsertHardware({ name: 'Core-Router-01', inventoryNumber: 'ИН-0001', type: 'router', vendor: 'Cisco', model: 'ISR 4331', serial: 'CSR-001', location: 'Серверная', ip: '192.168.1.1', cpu: 'QorIQ', ramGb: 4, diskGb: 8, os: 'IOS XE', status: 'active' })
+  upsertHardware({ name: 'SW-Floor2', inventoryNumber: 'ИН-0002', type: 'switch', vendor: 'HP', model: 'ProCurve 2530', serial: 'SW-220', location: '2 этаж', ip: '192.168.1.2', ramGb: 1, diskGb: 1, os: 'ArubaOS', status: 'active' })
+  upsertHardware({ name: 'PC-Buh-07', inventoryNumber: 'ИН-0003', type: 'pc', vendor: 'Dell', model: 'OptiPlex 3070', serial: 'PC-707', location: 'Бухгалтерия', ip: '192.168.1.107', cpu: 'i3-9100', ramGb: 4, diskGb: 128, os: 'Windows 7', status: 'active' })
+  upsertHardware({ name: 'HP-LaserJet-Hall', inventoryNumber: 'ИН-0004', type: 'printer', vendor: 'HP', model: 'LaserJet M404', serial: 'PRN-12', location: 'Холл', ip: '192.168.1.50', os: 'firmware', status: 'active' })
   upsertSoftware({ name: 'Windows 10 Pro', vendor: 'Microsoft', version: '22H2', seats: 50, seatsUsed: 47, expiryDate: '', licenseKey: 'XXXXX-VOLUME' })
   upsertSoftware({ name: 'Антивирус Pro', vendor: 'SecureCorp', version: '12', seats: 60, seatsUsed: 55, expiryDate: new Date(Date.now() + 20 * 86400000).toISOString().slice(0, 10), licenseKey: 'AV-2024' })
 }

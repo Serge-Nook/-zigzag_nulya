@@ -8,6 +8,7 @@ import type {
   HardwareAsset,
   InventoryStats,
   LldpNeighbor,
+  LocalNetwork,
   PingResult,
   ScanOptions,
   SnmpTrap,
@@ -65,6 +66,7 @@ const api = {
       ipcRenderer.invoke(IPC.netSnmpGet, host, oids, community),
     snmpWalk: (host: string, oid: string, community: string): Promise<SnmpVarbind[]> =>
       ipcRenderer.invoke(IPC.netSnmpWalk, host, oid, community),
+    localNetworks: (): Promise<LocalNetwork[]> => ipcRenderer.invoke(IPC.netLocalNetworks),
     traceroute: (target: string): Promise<TracerouteHop[]> =>
       ipcRenderer.invoke(IPC.netTraceroute, target),
     lldp: (host: string, community: string): Promise<LldpNeighbor[]> =>

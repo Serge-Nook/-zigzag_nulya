@@ -37,6 +37,7 @@ function LinkedAssets({ node }: { node: TopologyNode }): JSX.Element {
             <b>{a.name}</b>
             <div className="muted">
               {[a.vendor, a.model].filter(Boolean).join(' ') || a.type}
+              {a.inventoryNumber ? ` · Инв. № ${a.inventoryNumber}` : ''}
               {a.serial ? ` · S/N ${a.serial}` : ''}
             </div>
           </div>

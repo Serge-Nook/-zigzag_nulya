@@ -38,6 +38,7 @@ export function hardwareCard(
       title: 'Общие сведения',
       rows: [
         ['Название', dash(a.name)],
+        ['Инвентарный №', dash(a.inventoryNumber)],
         ['Тип', dash(a.type)],
         ['Производитель', dash(a.vendor)],
         ['Модель', dash(a.model)],

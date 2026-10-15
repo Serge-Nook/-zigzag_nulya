@@ -18,6 +18,7 @@ import { pingHost } from './network/ping'
 import { scanNetwork } from './network/scan'
 import { snmpGet, snmpWalk, lldpNeighbors } from './network/snmp'
 import { traceroute } from './network/traceroute'
+import { localNetworks } from './network/localnet'
 import { startTrapReceiver, stopTrapReceiver } from './network/trap'
 import * as inv from './db/inventory'
 
@@ -76,6 +77,7 @@ export async function registerIpc(): Promise<void> {
     IPC.netSnmpWalk,
     (_e, host: string, oid: string, community: string) => snmpWalk(host, oid, community)
   )
+  ipcMain.handle(IPC.netLocalNetworks, () => localNetworks())
   ipcMain.handle(IPC.netTraceroute, (_e, target: string) => traceroute(target))
   ipcMain.handle(
     IPC.netLldp,

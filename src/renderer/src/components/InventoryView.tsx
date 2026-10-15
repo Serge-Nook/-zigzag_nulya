@@ -77,6 +77,7 @@ function Overview(): JSX.Element {
 }
 
 const HW_FIELDS: { key: keyof HardwareAsset; label: string; type?: string }[] = [
+  { key: 'inventoryNumber', label: 'Инвентарный №' },
   { key: 'name', label: 'Название' },
   { key: 'type', label: 'Тип' },
   { key: 'vendor', label: 'Производитель' },
@@ -94,9 +95,10 @@ const HW_FIELDS: { key: keyof HardwareAsset; label: string; type?: string }[] = 
   { key: 'warrantyUntil', label: 'Гарантия до', type: 'date' }
 ]
 
-type HwCol = 'name' | 'type' | 'vendor' | 'model' | 'serial' | 'location' | 'ip' | 'os' | 'ramGb' | 'diskGb' | 'status' | 'warrantyUntil' | 'node'
+type HwCol = 'inventoryNumber' | 'name' | 'type' | 'vendor' | 'model' | 'serial' | 'location' | 'ip' | 'os' | 'ramGb' | 'diskGb' | 'status' | 'warrantyUntil' | 'node'
 
 const HW_COLUMNS: { key: HwCol; label: string }[] = [
+  { key: 'inventoryNumber', label: 'Инв. №' },
   { key: 'name', label: 'Название' },
   { key: 'type', label: 'Тип' },
   { key: 'vendor', label: 'Производитель' },
@@ -144,6 +146,9 @@ function HardwareTab(): JSX.Element {
 
   async function save(): Promise<void> {
     if (!editing) return
+    const inv = editing.inventoryNumber?.trim().toLowerCase()
+    const dup = inv ? rows.find((r) => r.id !== editing.id && r.inventoryNumber?.trim().toLowerCase() === inv) : undefined
+    if (dup && !confirm(`Инвентарный № «${editing.inventoryNumber}» уже присвоен «${dup.name}». Сохранить всё равно?`)) return
     await window.zigzag.inventory.upsertHardware(editing)
     setEditing(null)
     refresh()
@@ -157,7 +162,7 @@ function HardwareTab(): JSX.Element {
   const cell = (a: HardwareAsset, k: HwCol): string => {
     if (k === 'node') return nodeLabel(a) || '—'
     const v = a[k]
-    return v === null || v === '' ? '—' : String(v)
+    return v === null || v === undefined || v === '' ? '—' : String(v)
   }
 
   return (
